@@ -18,51 +18,32 @@ public class LikeDbStorage implements LikeStorage {
 
     @Override
     public void addLike(Integer filmId, Integer userId) {
-        String query = """
-                INSERT INTO "like" (film_id, user_id)
-                VALUES (:filmId, :userId);
-                """;
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("filmId", filmId)
                 .addValue("userId", userId);
-        namedParameterJdbcTemplate.update(query, params);
+        namedParameterJdbcTemplate.update(LikeSqlQueries.ADD_LIKE.getQuery(), params);
     }
 
     @Override
     public void removeLike(Integer filmId, Integer userId) {
-        String query = """
-                DELETE FROM "like"
-                WHERE film_id = :filmId
-                AND user_id = :userId;
-                """;
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("filmId", filmId)
                 .addValue("userId", userId);
-        namedParameterJdbcTemplate.update(query, params);
+        namedParameterJdbcTemplate.update(LikeSqlQueries.REMOVE_LIKE.getQuery(), params);
     }
 
     @Override
     public List<Integer> getLikesByFilmId(Integer filmId) {
-        String query = """
-                SELECT user_id FROM "like"
-                WHERE film_id = :filmId;
-                """;
         MapSqlParameterSource params = new MapSqlParameterSource("filmId", filmId);
-        return namedParameterJdbcTemplate.queryForList(query, params, Integer.class);
+        return namedParameterJdbcTemplate.queryForList(LikeSqlQueries.GET_LIKES_BY_FILM_ID.getQuery(),
+                params, Integer.class);
     }
 
     @Override
     public List<LikeDto> getLikesByFilmIdList(List<Integer> filmIdList) {
         SqlParameterSource parameterSource = new MapSqlParameterSource("filmIds", filmIdList);
-        String query = """
-                SELECT
-                	film_id,
-                	user_id
-                FROM "like"
-                WHERE film_id in (:filmIds)
-                ORDER BY film_id;
-                """;
-        return namedParameterJdbcTemplate.query(query, parameterSource, likeBatchRowMapper);
+        return namedParameterJdbcTemplate.query(LikeSqlQueries.GET_LIKES_BY_FILM_ID_LIST.getQuery(),
+                parameterSource, likeBatchRowMapper);
     }
 
     @Builder

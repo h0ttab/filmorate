@@ -28,15 +28,13 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> findAll() {
-        String query = "SELECT * FROM film;";
-        return namedParameterJdbcTemplate.query(query, mapper);
+        return namedParameterJdbcTemplate.query(FilmSqlQueries.FIND_ALL.getQuery(), mapper);
     }
 
     @Override
     public Film findById(Integer filmId) {
-        String query = "SELECT * FROM film WHERE id = :id;";
         MapSqlParameterSource params = new MapSqlParameterSource("id", filmId);
-        List<Film> result = namedParameterJdbcTemplate.query(query, params, mapper);
+        List<Film> result = namedParameterJdbcTemplate.query(FilmSqlQueries.FIND_BY_ID.getQuery(), params, mapper);
         if (result.isEmpty()) {
             LoggedException.throwNew(ExceptionType.FILM_NOT_FOUND, getClass(), List.of(filmId));
         }
@@ -45,10 +43,6 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film create(Film film) {
-        String query = """
-                INSERT INTO film (NAME, DESCRIPTION, RELEASE_DATE, DURATION, MPA_ID)
-                VALUES(:name, :description, :releaseDate, :duration, :mpaId);
-                """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         MapSqlParameterSource params = new MapSqlParameterSource()
@@ -58,7 +52,7 @@ public class FilmDbStorage implements FilmStorage {
                 .addValue("duration", film.getDuration())
                 .addValue("mpaId", film.getMpa().getId());
 
-        namedParameterJdbcTemplate.update(query, params, keyHolder, new String[]{"id"});
+        namedParameterJdbcTemplate.update(FilmSqlQueries.CREATE.getQuery(), params, keyHolder, new String[]{"id"});
 
         if (Optional.ofNullable(keyHolder.getKey()).isEmpty()) {
             LoggedException.throwNew(ExceptionType.UNEXPECTED_ERROR, getClass(), List.of());
@@ -71,24 +65,6 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film update(Film film) {
-
-        String queryFilmUpdateWithMpa = """
-                    UPDATE film f
-                    SET name = :name,
-                        description = :description,
-                        release_date = :releaseDate,
-                        duration = :duration,
-                        mpa_id = :mpaId
-                    WHERE f.id = :id;
-                """;
-        String queryFilmUpdateNoMpa = """
-                UPDATE film f
-                SET name = :name,
-                    description = :description,
-                    release_date = :releaseDate,
-                    duration = :duration
-                WHERE f.id = :id;
-                """;
         int updatedFilmRows;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
@@ -99,10 +75,10 @@ public class FilmDbStorage implements FilmStorage {
                 .addValue("id", film.getId());
 
         if (film.getMpa() == null) {
-            updatedFilmRows = namedParameterJdbcTemplate.update(queryFilmUpdateNoMpa, params);
+            updatedFilmRows = namedParameterJdbcTemplate.update(FilmSqlQueries.UPDATE_NO_MPA.getQuery(), params);
         } else {
             params.addValue("mpaId", film.getMpa().getId());
-            updatedFilmRows = namedParameterJdbcTemplate.update(queryFilmUpdateWithMpa, params);
+            updatedFilmRows = namedParameterJdbcTemplate.update(FilmSqlQueries.UPDATE_WITH_MPA.getQuery(), params);
         }
         if (updatedFilmRows == 0) {
             LoggedException.throwNew(ExceptionType.FILM_NOT_FOUND, getClass(), List.of(film.getId()));
@@ -113,9 +89,8 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Integer delete(Integer filmId) {
-        String query = "DELETE FROM film WHERE id = :id";
         MapSqlParameterSource params = new MapSqlParameterSource("id", filmId);
-        int deletedRows = namedParameterJdbcTemplate.update(query, params);
+        int deletedRows = namedParameterJdbcTemplate.update(FilmSqlQueries.DELETE.getQuery(), params);
         if (deletedRows == 0) {
             LoggedException.throwNew(ExceptionType.FILM_NOT_FOUND, getClass(), List.of(filmId));
         }
@@ -125,26 +100,13 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> findTopLiked(int size) {
-        String query = """
-                    SELECT f.*
-                    FROM film AS f
-                    LEFT JOIN "like" AS l ON f.id = l.film_id
-                    GROUP BY f.id
-                    ORDER BY COUNT(l.id) DESC
-                    LIMIT :size;
-                """;
         MapSqlParameterSource params = new MapSqlParameterSource("size", size);
-        return namedParameterJdbcTemplate.query(query, params, mapper);
+        return namedParameterJdbcTemplate.query(FilmSqlQueries.FIND_TOP_LIKED.getQuery(), params, mapper);
     }
 
     @Override
     public List<Film> findTopLiked(int count, Integer genreId, Integer year) {
-        StringBuilder queryBuilder = new StringBuilder("""
-                SELECT f.*, COUNT(l.id) as like_count
-                FROM film AS f
-                LEFT JOIN "like" AS l ON f.id = l.film_id
-                LEFT JOIN film_genre AS fg ON f.id = fg.film_id
-                """);
+        StringBuilder queryBuilder = new StringBuilder(FilmSqlQueries.FIND_TOP_LIKED_DYNAMIC_BASE.getQuery());
 
         // Начинаем формировать условия WHERE
         MapSqlParameterSource params = new MapSqlParameterSource();
@@ -152,7 +114,7 @@ public class FilmDbStorage implements FilmStorage {
 
         // Добавляем условие по жанру, если указан genreId
         if (genreId != null) {
-            queryBuilder.append("WHERE fg.genre_id = :genreId ");
+            queryBuilder.append("WHERE ").append(FilmSqlQueries.FIND_TOP_LIKED_GENRE_CONDITION.getQuery());
             params.addValue("genreId", genreId);
             hasConditions = true;
         }
@@ -164,16 +126,12 @@ public class FilmDbStorage implements FilmStorage {
             } else {
                 queryBuilder.append("WHERE ");
             }
-            queryBuilder.append("EXTRACT(YEAR FROM f.release_date) = :year ");
+            queryBuilder.append(FilmSqlQueries.FIND_TOP_LIKED_YEAR_CONDITION.getQuery());
             params.addValue("year", year);
         }
 
         // Добавляем группировку, сортировку и лимит
-        queryBuilder.append("""
-                GROUP BY f.id
-                ORDER BY like_count DESC
-                LIMIT :count
-                """);
+        queryBuilder.append(FilmSqlQueries.FIND_TOP_LIKED_DYNAMIC_SUFFIX.getQuery());
 
         // Добавляем параметр limit
         params.addValue("count", count);
@@ -183,30 +141,14 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> findByDirector(Integer directorId, SortOrder order) {
-        String query = """
-                SELECT f.* from film f
-                JOIN film_director fd on f.id = fd.film_id
-                WHERE fd.director_id = :directorId;
-                """;
+        String query = FilmSqlQueries.FIND_BY_DIRECTOR.getQuery();
 
         switch (order) {
             case LIKES -> {
-                query = """
-                        SELECT f.* FROM film f
-                        LEFT JOIN film_director fd ON f.id = fd.film_id
-                        LEFT JOIN "like" l ON f.id = l.film_id
-                        WHERE fd.director_id = :directorId
-                        GROUP BY f.id
-                        ORDER BY count(DISTINCT l.user_id) DESC;
-                        """;
+                query = FilmSqlQueries.FIND_BY_DIRECTOR_SORT_BY_LIKES.getQuery();
             }
             case YEAR -> {
-                query = """
-                        SELECT f.* FROM film f
-                        JOIN film_director fd ON f.id = fd.film_id
-                        WHERE fd.director_id = :directorId
-                        ORDER BY f.release_date ASC;
-                        """;
+                query = FilmSqlQueries.FIND_BY_DIRECTOR_SORT_BY_YEAR.getQuery();
             }
         }
         MapSqlParameterSource params = new MapSqlParameterSource("directorId", directorId);
@@ -215,20 +157,11 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> findCommonFilms(Integer userId, Integer friendId) {
-        String query = """
-                SELECT f.*
-                FROM film f
-                JOIN "like" l_user ON f.id = l_user.film_id AND l_user.user_id = :userId
-                JOIN "like" l_friend ON f.id = l_friend.film_id AND l_friend.user_id = :friendId
-                LEFT JOIN "like" l_all ON f.id = l_all.film_id
-                GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-                ORDER BY COUNT(l_all.user_id) DESC, f.id;
-                """;
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("userId", userId)
                 .addValue("friendId", friendId);
 
-        return namedParameterJdbcTemplate.query(query, params, mapper);
+        return namedParameterJdbcTemplate.query(FilmSqlQueries.FIND_COMMON_FILMS.getQuery(), params, mapper);
     }
 
     @Component

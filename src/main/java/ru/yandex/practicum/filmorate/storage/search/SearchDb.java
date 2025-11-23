@@ -20,30 +20,21 @@ public class SearchDb implements Search {
 
     @Override
     public List<Film> searchFilms(String searchQuery, Set<SearchTarget> searchTargetSet) {
-        StringBuilder query = new StringBuilder("""
-                SELECT f.* FROM film f
-                LEFT JOIN film_director fd ON fd.film_id = f.id
-                LEFT JOIN director dir ON fd.director_id = dir.id
-                LEFT JOIN "like" AS l ON f.id = l.film_id
-                WHERE FALSE
-                """);
+        StringBuilder query = new StringBuilder(SearchSqlQueries.SEARCH_BASE.getQuery());
 
         MapSqlParameterSource params = new MapSqlParameterSource("searchQuery", "%" + searchQuery + "%");
 
         for (SearchTarget searchTarget : searchTargetSet) {
             switch (searchTarget) {
                 case TITLE -> {
-                    query.append("OR f.name ILIKE :searchQuery \n");
+                    query.append(SearchSqlQueries.SEARCH_BY_TITLE.getQuery());
                 }
                 case DIRECTOR -> {
-                    query.append("OR dir.name ILIKE :searchQuery \n");
+                    query.append(SearchSqlQueries.SEARCH_BY_DIRECTOR.getQuery());
                 }
             }
         }
-        query.append("""
-                GROUP BY f.id
-                ORDER BY COUNT(l.id) DESC;
-                """);
+        query.append(SearchSqlQueries.SEARCH_SUFFIX.getQuery());
 
         return namedParameterJdbcTemplate.query(query.toString(), params, filmRowMapper);
     }

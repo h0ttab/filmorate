@@ -23,23 +23,18 @@ public class FeedDbStorage implements FeedStorage {
 
     @Override
     public List<Feed> findAll() {
-        String query = "SELECT * FROM feed";
-        return namedParameterJdbcTemplate.query(query, mapper);
+        return namedParameterJdbcTemplate.query(FeedSqlQueries.FIND_ALL.getQuery(), mapper);
     }
 
     @Override
     public List<Feed> findById(Integer id) {
         MapSqlParameterSource params = new MapSqlParameterSource("userId", id);
-        String query = "SELECT * FROM feed WHERE user_id = :userId";
-        return namedParameterJdbcTemplate.query(query, params, mapper);
+        return namedParameterJdbcTemplate.query(FeedSqlQueries.FIND_BY_USER_ID.getQuery(), params, mapper);
     }
 
     @Override
     public void save(Integer userId, FeedEventType feedEventType, OperationType operationType,
                      Integer entityId) {
-        String query = "INSERT INTO feed (date, user_id, event_type, operation_type, entity_id) " +
-                "VALUES (:date, :userId, :eventType, :operationType, :entityId);";
-
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("date", Instant.now())
                 .addValue("userId", userId)
@@ -47,7 +42,7 @@ public class FeedDbStorage implements FeedStorage {
                 .addValue("operationType", operationType.toString())
                 .addValue("entityId", entityId);
 
-        namedParameterJdbcTemplate.update(query, params);
+        namedParameterJdbcTemplate.update(FeedSqlQueries.SAVE.getQuery(), params);
     }
 
     @Component
