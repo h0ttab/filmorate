@@ -58,8 +58,6 @@ public abstract class FilmMapper {
     protected abstract Film mapUpdate(FilmUpdateDto dto);
 
     public Film toEntity(FilmCreateDto dto) {
-        validateCreateFilmDto(dto);
-
         Film film = mapCreate(dto);
 
         List<Genre> genres = List.of();
@@ -96,8 +94,6 @@ public abstract class FilmMapper {
     }
 
     public Film toEntity(FilmUpdateDto dto) {
-        validateUpdateFilmDto(dto);
-
         Film film = mapUpdate(dto);
 
         if (Optional.ofNullable(dto.getGenres()).isPresent()) {
@@ -109,7 +105,6 @@ public abstract class FilmMapper {
 
         if (Optional.ofNullable(dto.getMpa()).isPresent()) {
             Integer mpaId = dto.getMpa().getId();
-            validators.validateMpaExists(mpaId, getClass());
             film.setMpa(mpaService.findById(mpaId));
         }
 
@@ -123,44 +118,5 @@ public abstract class FilmMapper {
         }
 
         return film;
-    }
-
-    private void validateCreateFilmDto(FilmCreateDto dto) {
-        validators.isValidString(dto.getName());
-        validators.isValidString(dto.getDescription());
-        validators.validateFilmReleaseDate(dto.getReleaseDate(), getClass());
-        validators.validateMpaExists(dto.getMpa().getId(), getClass());
-    }
-
-    private void validateUpdateFilmDto(FilmUpdateDto dto) {
-        validators.validateFilmExists(dto.getId(), getClass());
-
-        if (Optional.ofNullable(dto.getName()).isPresent()) {
-            validators.isValidString(dto.getName());
-        }
-
-        if (Optional.ofNullable(dto.getDescription()).isPresent()) {
-            validators.isValidString(dto.getDescription());
-        }
-
-        if (Optional.ofNullable(dto.getReleaseDate()).isPresent()) {
-            validators.validateFilmReleaseDate(dto.getReleaseDate(), getClass());
-        }
-
-        if (Optional.ofNullable(dto.getGenres()).isPresent()) {
-            dto.getGenres().forEach(
-                    genreIdDto -> validators.validateGenreExists(genreIdDto.getId(), getClass())
-            );
-        }
-
-        if (Optional.ofNullable(dto.getMpa()).isPresent()) {
-            validators.validateMpaExists(dto.getMpa().getId(), getClass());
-        }
-
-        if (Optional.ofNullable(dto.getDirectors()).isPresent()) {
-            dto.getDirectors().forEach(
-                    directorIdDto -> validators.validateDirectorExists(directorIdDto.getId(), getClass())
-            );
-        }
     }
 }

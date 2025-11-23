@@ -89,6 +89,7 @@ public class FilmService {
     }
 
     public Film create(FilmCreateDto filmCreateDto) {
+        validators.validateCreateFilmDto(filmCreateDto);
         Film film = filmMapper.toEntity(filmCreateDto);
         Film createdFilm = filmStorage.create(film);
         linkAttributesToFilm(film);
@@ -96,8 +97,7 @@ public class FilmService {
     }
 
     public Film update(FilmUpdateDto filmUpdateDto) {
-        validators.validateFilmExists(filmUpdateDto.getId(), getClass());
-
+        validators.validateUpdateFilmDto(filmUpdateDto);
         Film filmUpdate = filmMapper.toEntity(filmUpdateDto);
         Film filmOriginal = findById(filmUpdate.getId());
 

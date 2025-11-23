@@ -9,6 +9,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.ExceptionType;
 import ru.yandex.practicum.filmorate.exception.LoggedException;
+import ru.yandex.practicum.filmorate.model.dto.film.FilmCreateDto;
+import ru.yandex.practicum.filmorate.model.dto.film.FilmUpdateDto;
 
 @Component
 @RequiredArgsConstructor
@@ -98,6 +100,45 @@ public class Validators {
                     END;
                 """;
         return Boolean.TRUE.equals(jdbcTemplate.queryForObject(query, Boolean.class, filmId));
+    }
+
+    public void validateCreateFilmDto(FilmCreateDto dto) {
+        isValidString(dto.getName());
+        isValidString(dto.getDescription());
+        validateFilmReleaseDate(dto.getReleaseDate(), getClass());
+        validateMpaExists(dto.getMpa().getId(), getClass());
+    }
+
+    public void validateUpdateFilmDto(FilmUpdateDto dto) {
+        validateFilmExists(dto.getId(), getClass());
+
+        if (Optional.ofNullable(dto.getName()).isPresent()) {
+            isValidString(dto.getName());
+        }
+
+        if (Optional.ofNullable(dto.getDescription()).isPresent()) {
+            isValidString(dto.getDescription());
+        }
+
+        if (Optional.ofNullable(dto.getReleaseDate()).isPresent()) {
+            validateFilmReleaseDate(dto.getReleaseDate(), getClass());
+        }
+
+        if (Optional.ofNullable(dto.getGenres()).isPresent()) {
+            dto.getGenres().forEach(
+                    genreIdDto -> validateGenreExists(genreIdDto.getId(), getClass())
+            );
+        }
+
+        if (Optional.ofNullable(dto.getMpa()).isPresent()) {
+            validateMpaExists(dto.getMpa().getId(), getClass());
+        }
+
+        if (Optional.ofNullable(dto.getDirectors()).isPresent()) {
+            dto.getDirectors().forEach(
+                    directorIdDto -> validateDirectorExists(directorIdDto.getId(), getClass())
+            );
+        }
     }
 
     public void validateFilmExists(Integer filmId, Class<?> clazz) {

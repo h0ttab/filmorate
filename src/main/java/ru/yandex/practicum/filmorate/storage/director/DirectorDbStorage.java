@@ -1,13 +1,13 @@
 package ru.yandex.practicum.filmorate.storage.director;
 
-import java.sql.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.*;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -20,7 +20,6 @@ import ru.yandex.practicum.filmorate.model.Director;
 @Component
 @RequiredArgsConstructor
 public class DirectorDbStorage implements DirectorStorage {
-    private final JdbcTemplate jdbcTemplate;
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final RowMapper<Director> mapper;
     private final RowMapper<DirectorBatchDto> batchDirectorMapper;
@@ -28,16 +27,9 @@ public class DirectorDbStorage implements DirectorStorage {
 
     @Override
     public Director create(Director director) {
-        String query = """
-                INSERT INTO director (name)
-                VALUES (?);
-                """;
+        MapSqlParameterSource params = new MapSqlParameterSource("directorName", director.getName());
         GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
-        jdbcTemplate.update(con -> {
-            PreparedStatement ps = con.prepareStatement(query, new String[]{"id"});
-            ps.setString(1, director.getName());
-            return ps;
-        }, keyHolder);
+        namedParameterJdbcTemplate.update(DirectorSqlQueries.CREATE.getQuery(), params, keyHolder, new String[]{"id"});
 
         if (Optional.ofNullable(keyHolder.getKey()).isEmpty()) {
             LoggedException.throwNew(ExceptionType.UNEXPECTED_ERROR, getClass(), List.of());
@@ -48,56 +40,33 @@ public class DirectorDbStorage implements DirectorStorage {
 
     @Override
     public List<Director> findAll() {
-        String query = """
-                SELECT * FROM director
-                ORDER BY id;
-                """;
-        return jdbcTemplate.query(query, mapper);
+        return namedParameterJdbcTemplate.query(DirectorSqlQueries.FIND_ALL.getQuery(), mapper);
     }
 
     @Override
     public List<Director> findByFilm(Integer filmId) {
-        String query = """
-                SELECT d.* FROM director d
-                JOIN film_director fd ON d.id = fd.director_id
-                WHERE fd.film_id = ?;
-                """;
-        return jdbcTemplate.query(query, mapper, filmId);
+        MapSqlParameterSource params = new MapSqlParameterSource("filmId", filmId);
+        return namedParameterJdbcTemplate.query(DirectorSqlQueries.FIND_BY_FILM_ID.getQuery(), params, mapper);
     }
 
     @Override
     public List<Director> findByIdList(List<Integer> directorIdList) {
-        String query = """
-                SELECT * FROM director
-                WHERE id IN (:ids);
-                """;
-        SqlParameterSource parameters = new MapSqlParameterSource("ids", directorIdList);
-        return namedParameterJdbcTemplate.query(query, parameters, mapper);
+        SqlParameterSource params = new MapSqlParameterSource("ids", directorIdList);
+        return namedParameterJdbcTemplate.query(DirectorSqlQueries.FIND_BY_ID_LIST.getQuery(), params, mapper);
     }
 
     @Override
     public List<DirectorBatchDto> findByFilmIdList(List<Integer> filmIdList) {
-        SqlParameterSource parameterSource = new MapSqlParameterSource("filmIds", filmIdList);
-        String query = """
-                    SELECT
-                        fd.film_id,
-                        d.id AS director_id,
-                        d.name AS director_name
-                    FROM film_director fd
-                    JOIN director d ON d.id = fd.director_id
-                    WHERE fd.film_id IN (:filmIds)
-                    ORDER BY fd.film_id;
-                """;
-        return namedParameterJdbcTemplate.query(query, parameterSource, batchDirectorMapper);
+        SqlParameterSource params = new MapSqlParameterSource("filmIds", filmIdList);
+        return namedParameterJdbcTemplate.query(DirectorSqlQueries.FIND_BY_FILM_ID_LIST.getQuery(),
+                params, batchDirectorMapper);
     }
 
     @Override
     public Director findById(Integer directorId) {
-        String query = """
-                SELECT * FROM director
-                WHERE id = ?;
-                """;
-        List<Director> result = jdbcTemplate.query(query, mapper, directorId);
+        MapSqlParameterSource params = new MapSqlParameterSource("directorId", directorId);
+        List<Director> result = namedParameterJdbcTemplate.query(DirectorSqlQueries.FIND_BY_ID.getQuery(),
+                params, mapper);
         if (result.isEmpty()) {
             LoggedException.throwNew(ExceptionType.DIRECTOR_NOT_FOUND, getClass(), List.of(directorId));
         }
@@ -106,12 +75,10 @@ public class DirectorDbStorage implements DirectorStorage {
 
     @Override
     public Director update(Director director) {
-        String query = """
-                UPDATE director
-                SET name = ?
-                WHERE id = ?;
-                """;
-        int updatedRows = jdbcTemplate.update(query, director.getName(), director.getId());
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("directorName", director.getName())
+                .addValue("directorId", director.getId());
+        int updatedRows = namedParameterJdbcTemplate.update(DirectorSqlQueries.UPDATE.getQuery(), params);
         if (updatedRows == 0) {
             LoggedException.throwNew(ExceptionType.DIRECTOR_NOT_FOUND, getClass(), List.of(director.getId()));
         }
@@ -120,37 +87,23 @@ public class DirectorDbStorage implements DirectorStorage {
 
     @Override
     public void linkDirectorsToFilm(Integer filmId, List<Integer> directorIds, boolean clearExisting) {
-        if (clearExisting) {
-            String deleteDirectorsOfFilmQuery = """
-                    DELETE FROM film_director
-                    WHERE film_id = ?;
-                    """;
-            jdbcTemplate.update(deleteDirectorsOfFilmQuery, filmId);
+        if (directorIds.isEmpty() || clearExisting) {
+            MapSqlParameterSource params = new MapSqlParameterSource("filmId", filmId);
+            namedParameterJdbcTemplate.update(DirectorSqlQueries.LINK_DELETE.getQuery(), params);
         }
 
-        if (directorIds == null || directorIds.isEmpty()) {
-            return;
-        }
-
-        String insertQuery = """
-                INSERT INTO film_director(film_id, director_id)
-                VALUES (?, ?)
-                """;
-
-        jdbcTemplate.batchUpdate(insertQuery, directorIds, directorIds.size(),
-                (ps, directorId) -> {
-                    ps.setInt(1, filmId);
-                    ps.setInt(2, directorId);
-                });
+        SqlParameterSource[] batchParams = directorIds.stream()
+                .map(directorId -> new MapSqlParameterSource()
+                        .addValue("filmId", filmId)
+                        .addValue("directorId", directorId))
+                .toArray(SqlParameterSource[]::new);
+        namedParameterJdbcTemplate.batchUpdate(DirectorSqlQueries.LINK_INSERT.getQuery(), batchParams);
     }
 
     @Override
     public void delete(Integer directorId) {
-        String query = """
-                DELETE FROM director
-                WHERE id = ?;
-                """;
-        int deletedRows = jdbcTemplate.update(query, directorId);
+        MapSqlParameterSource params = new MapSqlParameterSource("directorId", directorId);
+        int deletedRows = namedParameterJdbcTemplate.update(DirectorSqlQueries.DELETE.getQuery(), params);
         if (deletedRows == 0) {
             LoggedException.throwNew(ExceptionType.DIRECTOR_NOT_FOUND, getClass(), List.of(directorId));
         }

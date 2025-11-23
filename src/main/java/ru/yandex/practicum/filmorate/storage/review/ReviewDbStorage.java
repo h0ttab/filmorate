@@ -1,12 +1,14 @@
 package ru.yandex.practicum.filmorate.storage.review;
 
-import java.sql.*;
-import java.util.ArrayList;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
@@ -17,28 +19,23 @@ import ru.yandex.practicum.filmorate.model.Review;
 @Component
 @RequiredArgsConstructor
 public class ReviewDbStorage implements ReviewStorage {
-    private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final RowMapper<Review> mapper = new ReviewRowMapper();
 
     @Override
     public Review create(Review review) {
-        String query = """
-                INSERT INTO review (content, is_positive, user_id, film_id, useful)
-                VALUES (?, ?, ?, ?, ?);
-                """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        jdbcTemplate.update(con -> {
-            PreparedStatement ps = con.prepareStatement(query, new String[]{"id"});
-            ps.setString(1, review.getContent());
-            ps.setBoolean(2, review.getIsPositive());
-            ps.setInt(3, review.getUserId());
-            ps.setInt(4, review.getFilmId());
-            ps.setInt(5, review.getUseful());
-            return ps;
-        }, keyHolder);
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("content", review.getContent())
+                .addValue("isPositive", review.getIsPositive())
+                .addValue("userId", review.getUserId())
+                .addValue("filmId", review.getFilmId())
+                .addValue("useful", review.getUseful());
 
-        if (keyHolder.getKey() == null) {
+        namedParameterJdbcTemplate.update(ReviewSqlQueries.CREATE.getQuery(), params, keyHolder, new String[]{"id"});
+
+        if (Optional.ofNullable(keyHolder.getKey()).isEmpty()) {
             LoggedException.throwNew(ExceptionType.UNEXPECTED_ERROR, getClass(), List.of());
         }
 
@@ -48,20 +45,19 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public Review update(Review review) {
-        String query = """
-                UPDATE review
-                SET content = ?,
-                    is_positive = ?
-                WHERE id = ?;
-                """;
-        jdbcTemplate.update(query, review.getContent(), review.getIsPositive(), review.getReviewId());
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("content", review.getContent())
+                .addValue("isPositive", review.getIsPositive())
+                .addValue("id", review.getReviewId());
+
+        namedParameterJdbcTemplate.update(ReviewSqlQueries.UPDATE.getQuery(), params);
         return review;
     }
 
     @Override
     public Integer delete(Integer id) {
-        String query = "DELETE FROM review WHERE id = ?;";
-        int deleted = jdbcTemplate.update(query, id);
+        MapSqlParameterSource params = new MapSqlParameterSource("id", id);
+        int deleted = namedParameterJdbcTemplate.update(ReviewSqlQueries.DELETE.getQuery(), params);
         if (deleted == 0) {
             LoggedException.throwNew(ExceptionType.REVIEW_NOT_FOUND, getClass(), List.of(id));
         }
@@ -70,8 +66,8 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public Review findById(Integer id) {
-        String query = "SELECT * FROM review WHERE id = ?;";
-        List<Review> result = jdbcTemplate.query(query, mapper, id);
+        MapSqlParameterSource params = new MapSqlParameterSource("id", id);
+        List<Review> result = namedParameterJdbcTemplate.query(ReviewSqlQueries.FIND_BY_ID.getQuery(), params, mapper);
         if (result.isEmpty()) {
             LoggedException.throwNew(ExceptionType.REVIEW_NOT_FOUND, getClass(), List.of(id));
         }
@@ -80,15 +76,17 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public List<Review> findAll(Integer filmId, int count) {
-        StringBuilder query = new StringBuilder("SELECT * FROM review");
-        List<Object> params = new ArrayList<>();
+        StringBuilder query = new StringBuilder(ReviewSqlQueries.FIND_ALL_BASE.getQuery());
+        MapSqlParameterSource params = new MapSqlParameterSource();
+
         if (filmId != null) {
-            query.append(" WHERE film_id = ?");
-            params.add(filmId);
+            query.append(ReviewSqlQueries.FIND_ALL_FILM_CONDITION.getQuery());
+            params.addValue("filmId", filmId);
         }
-        query.append(" ORDER BY useful DESC, id ASC LIMIT ?;");
-        params.add(count);
-        return jdbcTemplate.query(query.toString(), mapper, params.toArray());
+        query.append(ReviewSqlQueries.FIND_ALL_SUFFIX.getQuery());
+        params.addValue("count", count);
+
+        return namedParameterJdbcTemplate.query(query.toString(), params, mapper);
     }
 
     @Override
@@ -128,15 +126,12 @@ public class ReviewDbStorage implements ReviewStorage {
      * Возвращает +2 / -2, если реакция была переключена, или 0, если ничего не изменилось.
      */
     private int tryFlipReaction(Integer reviewId, Integer userId, boolean isUseful) {
-        int updated = jdbcTemplate.update("""
-                        UPDATE review_feedback
-                           SET is_useful = ?
-                         WHERE review_id = ?
-                           AND user_id   = ?
-                           AND is_useful <> ?
-                        """,
-                isUseful, reviewId, userId, isUseful
-        );
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("isUseful", isUseful)
+                .addValue("reviewId", reviewId)
+                .addValue("userId", userId);
+
+        int updated = namedParameterJdbcTemplate.update(ReviewSqlQueries.FLIP_REACTION.getQuery(), params);
 
         if (updated == 1) {
             // дизлайк→лайк: +2; лайк→дизлайк: -2
@@ -151,17 +146,12 @@ public class ReviewDbStorage implements ReviewStorage {
      * Возвращает +1 / -1, если реакция добавлена, или 0, если ничего не изменилось.
      */
     private int tryInsertReaction(Integer reviewId, Integer userId, boolean isUseful) {
-        int inserted = jdbcTemplate.update("""
-                        INSERT INTO review_feedback (review_id, user_id, is_useful)
-                        SELECT ?, ?, ?
-                         WHERE NOT EXISTS (
-                               SELECT 1 FROM review_feedback
-                                WHERE review_id = ?
-                                  AND user_id   = ?
-                         )
-                        """,
-                reviewId, userId, isUseful, reviewId, userId
-        );
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("reviewId", reviewId)
+                .addValue("userId", userId)
+                .addValue("isUseful", isUseful);
+
+        int inserted = namedParameterJdbcTemplate.update(ReviewSqlQueries.INSERT_REACTION.getQuery(), params);
 
         if (inserted == 1) {
             // новая реакция: лайк +1, дизлайк -1
@@ -175,21 +165,19 @@ public class ReviewDbStorage implements ReviewStorage {
      * Применяет изменение к счётчику полезности отзыва.
      */
     private void updateUseful(Integer reviewId, int delta) {
-        jdbcTemplate.update(
-                "UPDATE review SET useful = useful + ? WHERE id = ?",
-                delta, reviewId
-        );
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("delta", delta)
+                .addValue("id", reviewId);
+        namedParameterJdbcTemplate.update(ReviewSqlQueries.UPDATE_USEFUL.getQuery(), params);
     }
 
     private void removeReaction(Integer reviewId, Integer userId, boolean isUseful) {
-        int deleted = jdbcTemplate.update("""
-                        DELETE FROM review_feedback
-                         WHERE review_id = ?
-                           AND user_id   = ?
-                           AND is_useful = ?
-                        """,
-                reviewId, userId, isUseful
-        );
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("reviewId", reviewId)
+                .addValue("userId", userId)
+                .addValue("isUseful", isUseful);
+
+        int deleted = namedParameterJdbcTemplate.update(ReviewSqlQueries.REMOVE_REACTION.getQuery(), params);
 
         if (deleted == 1) {
             // сняли лайк → -1; сняли дизлайк → +1

@@ -25,10 +25,10 @@ public class LikeService {
     public void addLike(Integer filmId, Integer userId) {
         try {
             validators.validateLikeNotExists(filmId, userId, getClass());
+            likeStorage.addLike(filmId, userId);
         } catch (ValidationException e) {
             log.warn(e.getMessage());
         }
-        likeStorage.addLike(filmId, userId);
         feedService.save(userId, LIKE, ADD, filmId);
     }
 

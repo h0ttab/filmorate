@@ -8,8 +8,9 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.*;
 
@@ -17,31 +18,31 @@ import ru.yandex.practicum.filmorate.model.*;
 @Component
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class FeedDbStorage implements FeedStorage {
-    private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final FeedRowMapper mapper;
 
     @Override
     public List<Feed> findAll() {
-        String query = "SELECT * FROM feed";
-        return jdbcTemplate.query(query, mapper);
+        return namedParameterJdbcTemplate.query(FeedSqlQueries.FIND_ALL.getQuery(), mapper);
     }
 
     @Override
     public List<Feed> findById(Integer id) {
-        String query = "SELECT * FROM feed WHERE user_id = ?";
-        return jdbcTemplate.query(query, mapper, id);
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", id);
+        return namedParameterJdbcTemplate.query(FeedSqlQueries.FIND_BY_USER_ID.getQuery(), params, mapper);
     }
 
     @Override
     public void save(Integer userId, FeedEventType feedEventType, OperationType operationType,
                      Integer entityId) {
-        String query = "INSERT INTO feed (date, user_id, event_type, operation_type, entity_id) VALUES (?, ?, ?, ?, ?);";
-        jdbcTemplate.update(query,
-                Instant.now(),
-                userId,
-                feedEventType.toString(),
-                operationType.toString(),
-                entityId);
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("date", Instant.now())
+                .addValue("userId", userId)
+                .addValue("eventType", feedEventType.toString())
+                .addValue("operationType", operationType.toString())
+                .addValue("entityId", entityId);
+
+        namedParameterJdbcTemplate.update(FeedSqlQueries.SAVE.getQuery(), params);
     }
 
     @Component
