@@ -1,40 +1,43 @@
 package ru.yandex.practicum.filmorate.mapper;
 
-import java.util.Optional;
-
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.mapstruct.BeforeMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.springframework.beans.factory.annotation.Autowired;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.model.dto.review.ReviewCreateDto;
 import ru.yandex.practicum.filmorate.model.dto.review.ReviewUpdateDto;
 import ru.yandex.practicum.filmorate.util.Validators;
 
-@Component
-@RequiredArgsConstructor
-public class ReviewMapper {
-    private final Validators validators;
+@Mapper(componentModel = "spring")
+public abstract class ReviewMapper {
 
-    public Review toEntity(ReviewCreateDto dto) {
+    protected Validators validators;
+
+    @Autowired
+    public void setValidators(Validators validators) {
+        this.validators = validators;
+    }
+
+    @BeforeMapping
+    protected void validateCreate(ReviewCreateDto dto) {
         validators.validateUserExists(dto.getUserId(), getClass());
         validators.validateFilmExists(dto.getFilmId(), getClass());
-        return Review.builder()
-                .content(dto.getContent())
-                .isPositive(dto.getIsPositive())
-                .userId(dto.getUserId())
-                .filmId(dto.getFilmId())
-                .useful(0)
-                .build();
     }
 
-    public Review toEntity(ReviewUpdateDto dto) {
-        return Review.builder()
-                .reviewId(dto.getReviewId())
-                .content(resolveOptional(Optional.ofNullable(dto.getContent())))
-                .isPositive(resolveOptional(Optional.ofNullable(dto.getIsPositive())))
-                .build();
+    @BeforeMapping
+    protected void validateUpdate(ReviewUpdateDto dto) {
+        validators.validateReviewExists(dto.getReviewId(), getClass());
     }
 
-    private <T> T resolveOptional(Optional<T> value) {
-        return value == null ? null : value.orElse(null);
-    }
+    // Создание отзыва
+    @Mapping(target = "reviewId", ignore = true)
+    @Mapping(target = "useful", constant = "0")
+    public abstract Review toEntity(ReviewCreateDto dto);
+
+    // Обновление отзыва
+    @Mapping(target = "userId", ignore = true)
+    @Mapping(target = "filmId", ignore = true)
+    @Mapping(target = "useful", ignore = true)
+    public abstract Review toEntity(ReviewUpdateDto dto);
 }
