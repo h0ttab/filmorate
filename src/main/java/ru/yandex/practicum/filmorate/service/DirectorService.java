@@ -47,17 +47,8 @@ public class DirectorService {
         List<DirectorBatchDto> directorBatchDtoList = directorStorage.findByFilmIdList(filmIdList);
         Map<Integer, List<Director>> filmDirectorMap = new HashMap<>();
         directorBatchDtoList.forEach(directorBatchDto -> {
-            List<Integer> directorIdList = Arrays.stream(directorBatchDto.directorsIdConcat().split(","))
-                    .mapToInt(Integer::parseInt)
-                    .boxed()
-                    .toList();
-            List<String> direcorNameList = Arrays.stream(directorBatchDto.directorsListConcat().split(",")).toList();
-            List<Director> directorList = new ArrayList<>();
-            for (int i = 0; i < direcorNameList.size(); i++) {
-                directorList.add(Director.builder().id(directorIdList.get(i)).name(direcorNameList.get(i)).build());
-            }
-            Integer filmId = directorBatchDto.filmId();
-            filmDirectorMap.put(filmId, directorList);
+            filmDirectorMap.computeIfAbsent(directorBatchDto.filmId(), v -> new ArrayList<>())
+                    .add(Director.builder().id(directorBatchDto.directorId()).name(directorBatchDto.directorName()).build());
         });
         return filmDirectorMap;
     }

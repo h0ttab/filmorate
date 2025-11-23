@@ -47,31 +47,30 @@ public class LikeDbStorage implements LikeStorage {
     }
 
     @Override
-    public List<LikeBatchDto> getLikesByFilmIdList(List<Integer> filmIdList) {
+    public List<LikeDto> getLikesByFilmIdList(List<Integer> filmIdList) {
         SqlParameterSource parameterSource = new MapSqlParameterSource("filmIds", filmIdList);
         String query = """
                 SELECT
                 	film_id,
-                	GROUP_CONCAT(user_id SEPARATOR ',') AS user_id_list
+                	user_id
                 FROM "like"
                 WHERE film_id in (:filmIds)
-                GROUP BY film_id
                 ORDER BY film_id;
                 """;
         return namedParameterJdbcTemplate.query(query, parameterSource, likeBatchRowMapper);
     }
 
     @Builder
-    public record LikeBatchDto(Integer filmId, String likeList) {
+    public record LikeDto(Integer filmId, Integer userId) {
     }
 
     @Component
-    private static class LikeBatchRowMapper implements RowMapper<LikeBatchDto> {
+    private static class LikeBatchRowMapper implements RowMapper<LikeDto> {
         @Override
-        public LikeBatchDto mapRow(ResultSet rs, int rowNum) throws SQLException {
-            return LikeBatchDto.builder()
+        public LikeDto mapRow(ResultSet rs, int rowNum) throws SQLException {
+            return LikeDto.builder()
                     .filmId(rs.getInt("film_id"))
-                    .likeList(rs.getString("user_id_list"))
+                    .userId(rs.getInt("user_id"))
                     .build();
         }
     }
