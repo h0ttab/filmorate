@@ -52,10 +52,10 @@ public enum FilmSqlQueries {
             LEFT JOIN film_genre AS fg ON f.id = fg.film_id
             """),
     FIND_TOP_LIKED_GENRE_CONDITION("""
-            fg.genre_id = :genreId 
+            fg.genre_id = :genreId
             """),
     FIND_TOP_LIKED_YEAR_CONDITION("""
-            EXTRACT(YEAR FROM f.release_date) = :year 
+            EXTRACT(YEAR FROM f.release_date) = :year
             """),
     FIND_TOP_LIKED_DYNAMIC_SUFFIX("""
             GROUP BY f.id

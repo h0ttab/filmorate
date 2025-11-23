@@ -1,7 +1,9 @@
 package ru.yandex.practicum.filmorate.storage.director;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Optional;
 
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
@@ -91,7 +93,7 @@ public class DirectorDbStorage implements DirectorStorage {
         }
 
         SqlParameterSource[] batchParams = directorIds.stream()
-                .map(directorId ->  new MapSqlParameterSource()
+                .map(directorId -> new MapSqlParameterSource()
                         .addValue("filmId", filmId)
                         .addValue("directorId", directorId))
                 .toArray(SqlParameterSource[]::new);
