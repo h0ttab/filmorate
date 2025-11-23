@@ -55,8 +55,8 @@ public class GenreDbStorage implements GenreStorage {
     public List<Genre> findByIdList(List<Integer> genreIdList) {
         SqlParameterSource parameters = new MapSqlParameterSource("ids", genreIdList);
         String query = """
-                SELECT * FROM genre
-                WHERE id IN (:ids)
+                    SELECT * FROM genre
+                    WHERE id IN (:ids)
                 """;
         return namedParameterJdbcTemplate.query(query, parameters, mapper);
     }
@@ -67,12 +67,11 @@ public class GenreDbStorage implements GenreStorage {
         String query = """
                     SELECT
                         fg.film_id,
-                        GROUP_CONCAT(g.name SEPARATOR ',') AS genres,
-                        GROUP_CONCAT(g.id SEPARATOR ',') AS genres_id
+                        g.id AS genre_id,
+                        g.name AS genre_name
                     FROM film_genre fg
                     JOIN genre g ON g.id = fg.genre_id
                     WHERE fg.film_id IN (:filmIds)
-                    GROUP BY fg.film_id
                     ORDER BY fg.film_id;
                 """;
         return namedParameterJdbcTemplate.query(query, parameters, batchGenreMapper);
@@ -111,13 +110,13 @@ public class GenreDbStorage implements GenreStorage {
         public GenreBatchDto mapRow(ResultSet rs, int rowNum) throws SQLException {
             return GenreBatchDto.builder()
                     .filmId(rs.getInt("film_id"))
-                    .genresListConcat(rs.getString("genres"))
-                    .genresIdConcat(rs.getString("genres_id"))
+                    .genreId(rs.getInt("genre_id"))
+                    .genreName(rs.getString("genre_name"))
                     .build();
         }
     }
 
     @Builder
-    public record GenreBatchDto(Integer filmId, String genresListConcat, String genresIdConcat) {
+    public record GenreBatchDto(Integer filmId, Integer genreId, String genreName) {
     }
 }

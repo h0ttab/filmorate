@@ -79,15 +79,14 @@ public class DirectorDbStorage implements DirectorStorage {
     public List<DirectorBatchDto> findByFilmIdList(List<Integer> filmIdList) {
         SqlParameterSource parameterSource = new MapSqlParameterSource("filmIds", filmIdList);
         String query = """
-                SELECT
-                    fd.film_id,
-                    GROUP_CONCAT(d.name SEPARATOR ',') AS directors,
-                    GROUP_CONCAT(d.id SEPARATOR ',') AS directors_id
-                FROM film_director fd
-                JOIN director d ON d.id = fd.director_id
-                WHERE fd.film_id IN (:filmIds)
-                GROUP BY fd.film_id
-                ORDER BY fd.film_id;
+                    SELECT
+                        fd.film_id,
+                        d.id AS director_id,
+                        d.name AS director_name
+                    FROM film_director fd
+                    JOIN director d ON d.id = fd.director_id
+                    WHERE fd.film_id IN (:filmIds)
+                    ORDER BY fd.film_id;
                 """;
         return namedParameterJdbcTemplate.query(query, parameterSource, batchDirectorMapper);
     }
@@ -171,13 +170,13 @@ public class DirectorDbStorage implements DirectorStorage {
         public DirectorBatchDto mapRow(ResultSet rs, int rowNum) throws SQLException {
             return DirectorBatchDto.builder()
                     .filmId(rs.getInt("film_id"))
-                    .directorsListConcat(rs.getString("directors"))
-                    .directorsIdConcat(rs.getString("directors_id"))
+                    .directorId(rs.getInt("director_id"))
+                    .directorName(rs.getString("director_name"))
                     .build();
         }
     }
 
     @Builder
-    public record DirectorBatchDto(Integer filmId, String directorsListConcat, String directorsIdConcat) {
+    public record DirectorBatchDto(Integer filmId, Integer directorId, String directorName) {
     }
 }

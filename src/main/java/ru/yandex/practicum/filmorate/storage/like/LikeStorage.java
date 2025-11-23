@@ -2,7 +2,7 @@ package ru.yandex.practicum.filmorate.storage.like;
 
 import java.util.List;
 
-import ru.yandex.practicum.filmorate.storage.like.LikeDbStorage.LikeBatchDto;
+import ru.yandex.practicum.filmorate.storage.like.LikeDbStorage.LikeDto;
 
 public interface LikeStorage {
     void addLike(Integer filmId, Integer userId);
@@ -11,5 +11,5 @@ public interface LikeStorage {
 
     List<Integer> getLikesByFilmId(Integer filmId);
 
-    List<LikeBatchDto> getLikesByFilmIdList(List<Integer> filmIdList);
+    List<LikeDto> getLikesByFilmIdList(List<Integer> filmIdList);
 }

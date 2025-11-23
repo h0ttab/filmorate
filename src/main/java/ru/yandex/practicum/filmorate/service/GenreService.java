@@ -47,17 +47,8 @@ public class GenreService {
         List<GenreBatchDto> genreBatchDtoList = genreStorage.findByFilmIdList(filmIdList);
         Map<Integer, List<Genre>> filmGenreMap = new HashMap<>();
         genreBatchDtoList.forEach(genreBatchDto -> {
-            List<Integer> genreIdList = Arrays.stream(genreBatchDto.genresIdConcat().split(","))
-                    .mapToInt(Integer::parseInt)
-                    .boxed()
-                    .toList();
-            List<String> genreNameList = Arrays.stream(genreBatchDto.genresListConcat().split(",")).toList();
-            List<Genre> genreList = new ArrayList<>();
-            for (int i = 0; i < genreNameList.size(); i++) {
-                genreList.add(Genre.builder().id(genreIdList.get(i)).name(genreNameList.get(i)).build());
-            }
-            Integer filmId = genreBatchDto.filmId();
-            filmGenreMap.put(filmId, genreList);
+            filmGenreMap.computeIfAbsent(genreBatchDto.filmId(), v -> new ArrayList<>())
+                    .add(Genre.builder().id(genreBatchDto.genreId()).name(genreBatchDto.genreName()).build());
         });
         return filmGenreMap;
     }
