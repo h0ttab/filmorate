@@ -13,7 +13,6 @@ import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.service.*;
@@ -41,7 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
         Validators.class,
         GenreService.class,
         GenreDbStorage.class,
-        FilmMapper.class,
         FilmRowMapper.class,
         FeedDbStorage.class,
         FeedService.class,
