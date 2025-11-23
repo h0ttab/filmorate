@@ -1,10 +1,12 @@
 package ru.yandex.practicum.filmorate.storage.search;
 
-import java.util.*;
+import java.util.List;
+import java.util.Set;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.search.SearchTarget;
@@ -14,36 +16,27 @@ import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage.FilmRowMapper;
 @Component
 @RequiredArgsConstructor
 public class SearchDb implements Search {
-    private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final FilmRowMapper filmRowMapper;
 
     @Override
     public List<Film> searchFilms(String searchQuery, Set<SearchTarget> searchTargetSet) {
-        StringBuilder query = new StringBuilder("""
-                SELECT f.* FROM film f
-                LEFT JOIN film_director fd ON fd.film_id = f.id
-                LEFT JOIN director dir ON fd.director_id = dir.id
-                LEFT JOIN "like" AS l ON f.id = l.film_id
-                WHERE FALSE
-                """);
-        List<String> params = new ArrayList<>();
+        StringBuilder query = new StringBuilder(SearchSqlQueries.SEARCH_BASE.getQuery());
+
+        MapSqlParameterSource params = new MapSqlParameterSource("searchQuery", "%" + searchQuery + "%");
 
         for (SearchTarget searchTarget : searchTargetSet) {
             switch (searchTarget) {
                 case TITLE -> {
-                    query.append("OR f.name ILIKE ? \n");
-                    params.add("%" + searchQuery + "%");
+                    query.append(SearchSqlQueries.SEARCH_BY_TITLE.getQuery());
                 }
                 case DIRECTOR -> {
-                    query.append("OR dir.name ILIKE ? \n");
-                    params.add("%" + searchQuery + "%");
+                    query.append(SearchSqlQueries.SEARCH_BY_DIRECTOR.getQuery());
                 }
             }
         }
-        query.append("""
-                GROUP BY f.id
-                ORDER BY COUNT(l.id) DESC;
-                """);
-        return jdbcTemplate.query(query.toString(), filmRowMapper, params.toArray());
+        query.append(SearchSqlQueries.SEARCH_SUFFIX.getQuery());
+
+        return namedParameterJdbcTemplate.query(query.toString(), params, filmRowMapper);
     }
 }

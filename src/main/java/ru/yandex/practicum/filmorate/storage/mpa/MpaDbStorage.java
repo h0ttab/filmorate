@@ -7,7 +7,6 @@ import java.util.Set;
 
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.*;
 import org.springframework.stereotype.Component;
@@ -16,60 +15,38 @@ import ru.yandex.practicum.filmorate.model.Mpa;
 @Component
 @RequiredArgsConstructor
 public class MpaDbStorage implements MpaStorage {
-    private final JdbcTemplate jdbcTemplate;
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final RowMapper<Mpa> mapper;
     private final RowMapper<MpaBatchDto> mpaBatchRowMapper;
 
     @Override
     public List<Mpa> findAll() {
-        String query = """
-                SELECT * FROM mpa
-                ORDER BY id;
-                """;
-        return jdbcTemplate.query(query, mapper);
+        return namedParameterJdbcTemplate.query(MpaSqlQueries.FIND_ALL.getQuery(), mapper);
     }
 
     @Override
     public Mpa findById(Integer mpaId) {
-        String query = """
-                SELECT * FROM mpa
-                WHERE id = ?;
-                """;
-        return jdbcTemplate.queryForObject(query, mapper, mpaId);
+        MapSqlParameterSource params = new MapSqlParameterSource("id", mpaId);
+        return namedParameterJdbcTemplate.queryForObject(MpaSqlQueries.FIND_BY_ID.getQuery(), params, mapper);
     }
 
     @Override
     public Mpa findByFilmId(Integer filmId) {
-        String query = """
-                SELECT * FROM mpa
-                JOIN film f on f.mpa_id = mpa.id
-                WHERE f.id = ?;
-                """;
-        return jdbcTemplate.queryForObject(query, mapper, filmId);
+        MapSqlParameterSource params = new MapSqlParameterSource("filmId", filmId);
+        return namedParameterJdbcTemplate.queryForObject(MpaSqlQueries.FIND_BY_FILM_ID.getQuery(), params, mapper);
     }
 
     @Override
     public List<Mpa> findByIdSet(Set<Integer> idList) {
         SqlParameterSource parameterSource = new MapSqlParameterSource("mpaIdList", idList);
-        String query = """
-                SELECT * FROM mpa
-                WHERE id in (:mpaIdList);
-                """;
-        return namedParameterJdbcTemplate.query(query, parameterSource, mapper);
+        return namedParameterJdbcTemplate.query(MpaSqlQueries.FIND_BY_ID_SET.getQuery(), parameterSource, mapper);
     }
 
     @Override
     public List<MpaBatchDto> findByFilmIdList(List<Integer> filmIdList) {
         SqlParameterSource parameterSource = new MapSqlParameterSource("filmIds", filmIdList);
-        String query = """
-                SELECT
-                    f.id AS film_id, m.id AS mpa_id, m.name AS mpa_name
-                FROM mpa m
-                JOIN film f on f.mpa_id = m.id
-                WHERE f.id in (:filmIds);
-                """;
-        return namedParameterJdbcTemplate.query(query, parameterSource, mpaBatchRowMapper);
+        return namedParameterJdbcTemplate.query(MpaSqlQueries.FIND_BY_FILM_ID_LIST.getQuery(),
+                parameterSource, mpaBatchRowMapper);
     }
 
     @Component

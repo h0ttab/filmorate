@@ -7,7 +7,6 @@ import java.util.Set;
 
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.*;
 import org.springframework.stereotype.Component;
@@ -16,81 +15,58 @@ import ru.yandex.practicum.filmorate.model.Genre;
 @Component
 @RequiredArgsConstructor
 public class GenreDbStorage implements GenreStorage {
-    private final JdbcTemplate jdbcTemplate;
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final RowMapper<Genre> mapper;
     private final RowMapper<GenreBatchDto> batchGenreMapper;
 
     @Override
     public List<Genre> findAll() {
-        String query = """
-                SELECT * FROM genre
-                ORDER BY id;
-                """;
-        return jdbcTemplate.query(query, mapper);
+        return namedParameterJdbcTemplate.query(GenreSqlQueries.FIND_ALL.getQuery(), mapper);
     }
 
     @Override
     public Genre findById(Integer genreId) {
-        String query = """
-                SELECT * FROM genre
-                WHERE id = ?;
-                """;
-        return jdbcTemplate.queryForObject(query, mapper, genreId);
+        MapSqlParameterSource params = new MapSqlParameterSource("id", genreId);
+        return namedParameterJdbcTemplate.queryForObject(GenreSqlQueries.FIND_BY_ID.getQuery(), params, mapper);
     }
 
     @Override
     public List<Genre> findByFilmId(Integer filmId) {
-        String query = """
-                    SELECT g.*
-                    FROM genre g
-                    JOIN film_genre fg ON g.id = fg.genre_id
-                    WHERE fg.film_id = ?
-                    ORDER BY fg.genre_id;
-                """;
-        return jdbcTemplate.query(query, mapper, filmId);
+        MapSqlParameterSource params = new MapSqlParameterSource("filmId", filmId);
+        return namedParameterJdbcTemplate.query(GenreSqlQueries.FIND_BY_FILM_ID.getQuery(), params, mapper);
     }
 
     @Override
     public List<Genre> findByIdList(List<Integer> genreIdList) {
         SqlParameterSource parameters = new MapSqlParameterSource("ids", genreIdList);
-        String query = """
-                    SELECT * FROM genre
-                    WHERE id IN (:ids)
-                """;
-        return namedParameterJdbcTemplate.query(query, parameters, mapper);
+        return namedParameterJdbcTemplate.query(GenreSqlQueries.FIND_BY_ID_LIST.getQuery(), parameters, mapper);
     }
 
     @Override
     public List<GenreBatchDto> findByFilmIdList(List<Integer> filmIdList) {
         SqlParameterSource parameters = new MapSqlParameterSource("filmIds", filmIdList);
-        String query = """
-                    SELECT
-                        fg.film_id,
-                        g.id AS genre_id,
-                        g.name AS genre_name
-                    FROM film_genre fg
-                    JOIN genre g ON g.id = fg.genre_id
-                    WHERE fg.film_id IN (:filmIds)
-                    ORDER BY fg.film_id;
-                """;
-        return namedParameterJdbcTemplate.query(query, parameters, batchGenreMapper);
+        return namedParameterJdbcTemplate.query(GenreSqlQueries.FIND_BY_FILM_ID_LIST.getQuery(),
+                parameters, batchGenreMapper);
     }
 
     @Override
     public void linkGenresToFilm(Integer filmId, Set<Integer> genreIdSet, boolean clearExisting) {
-        StringBuilder insertQuery = new StringBuilder();
-
-        for (Integer genreId : genreIdSet) {
-            insertQuery.append(String.format("INSERT INTO film_genre (film_id, genre_id) VALUES (%d, %d);", filmId, genreId));
-            insertQuery.append("\n");
-        }
-
         if (clearExisting) {
-            String deleteGenresOfFilmQuery = "DELETE FROM film_genre WHERE film_id = ?;";
-            jdbcTemplate.update(deleteGenresOfFilmQuery, filmId);
+            MapSqlParameterSource params = new MapSqlParameterSource("filmId", filmId);
+            namedParameterJdbcTemplate.update(GenreSqlQueries.LINK_DELETE.getQuery(), params);
         }
-        jdbcTemplate.update(insertQuery.toString());
+
+        if (genreIdSet == null || genreIdSet.isEmpty()) {
+            return;
+        }
+
+        SqlParameterSource[] batch = genreIdSet.stream()
+                .map(genreId -> new MapSqlParameterSource()
+                        .addValue("filmId", filmId)
+                        .addValue("genreId", genreId))
+                .toArray(SqlParameterSource[]::new);
+
+        namedParameterJdbcTemplate.batchUpdate(GenreSqlQueries.LINK_INSERT.getQuery(), batch);
     }
 
     @Component
