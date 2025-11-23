@@ -4,7 +4,8 @@ import java.util.*;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.search.SearchTarget;
@@ -14,7 +15,7 @@ import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage.FilmRowMapper;
 @Component
 @RequiredArgsConstructor
 public class SearchDb implements Search {
-    private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final FilmRowMapper filmRowMapper;
 
     @Override
@@ -26,17 +27,16 @@ public class SearchDb implements Search {
                 LEFT JOIN "like" AS l ON f.id = l.film_id
                 WHERE FALSE
                 """);
-        List<String> params = new ArrayList<>();
+
+        MapSqlParameterSource params = new MapSqlParameterSource("searchQuery", "%" + searchQuery + "%");
 
         for (SearchTarget searchTarget : searchTargetSet) {
             switch (searchTarget) {
                 case TITLE -> {
-                    query.append("OR f.name ILIKE ? \n");
-                    params.add("%" + searchQuery + "%");
+                    query.append("OR f.name ILIKE :searchQuery \n");
                 }
                 case DIRECTOR -> {
-                    query.append("OR dir.name ILIKE ? \n");
-                    params.add("%" + searchQuery + "%");
+                    query.append("OR dir.name ILIKE :searchQuery \n");
                 }
             }
         }
@@ -44,6 +44,7 @@ public class SearchDb implements Search {
                 GROUP BY f.id
                 ORDER BY COUNT(l.id) DESC;
                 """);
-        return jdbcTemplate.query(query.toString(), filmRowMapper, params.toArray());
+
+        return namedParameterJdbcTemplate.query(query.toString(), params, filmRowMapper);
     }
 }

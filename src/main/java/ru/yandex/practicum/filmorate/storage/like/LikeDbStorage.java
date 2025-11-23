@@ -6,7 +6,6 @@ import java.util.List;
 
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.*;
 import org.springframework.stereotype.Component;
@@ -14,7 +13,6 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class LikeDbStorage implements LikeStorage {
-    private final JdbcTemplate jdbcTemplate;
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final LikeBatchRowMapper likeBatchRowMapper;
 
@@ -22,28 +20,35 @@ public class LikeDbStorage implements LikeStorage {
     public void addLike(Integer filmId, Integer userId) {
         String query = """
                 INSERT INTO "like" (film_id, user_id)
-                VALUES (?, ?);
+                VALUES (:filmId, :userId);
                 """;
-        jdbcTemplate.update(query, filmId, userId);
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("filmId", filmId)
+                .addValue("userId", userId);
+        namedParameterJdbcTemplate.update(query, params);
     }
 
     @Override
     public void removeLike(Integer filmId, Integer userId) {
         String query = """
                 DELETE FROM "like"
-                WHERE film_id = ?
-                AND user_id = ?;
+                WHERE film_id = :filmId
+                AND user_id = :userId;
                 """;
-        jdbcTemplate.update(query, filmId, userId);
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("filmId", filmId)
+                .addValue("userId", userId);
+        namedParameterJdbcTemplate.update(query, params);
     }
 
     @Override
     public List<Integer> getLikesByFilmId(Integer filmId) {
         String query = """
                 SELECT user_id FROM "like"
-                WHERE film_id = ?;
+                WHERE film_id = :filmId;
                 """;
-        return jdbcTemplate.queryForList(query, Integer.class, filmId);
+        MapSqlParameterSource params = new MapSqlParameterSource("filmId", filmId);
+        return namedParameterJdbcTemplate.queryForList(query, params, Integer.class);
     }
 
     @Override

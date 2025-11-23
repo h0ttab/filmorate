@@ -1,14 +1,17 @@
 package ru.yandex.practicum.filmorate.storage.user;
 
-import java.sql.*;
-import java.sql.Date;
-import java.util.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
@@ -20,19 +23,20 @@ import ru.yandex.practicum.filmorate.model.User;
 @Component
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class UserDbStorage implements UserStorage {
-    private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final RowMapper<User> mapper = new UserRowMapper();
 
     @Override
     public List<User> findAll() {
         String query = "SELECT * FROM \"user\";";
-        return jdbcTemplate.query(query, mapper);
+        return namedParameterJdbcTemplate.query(query, mapper);
     }
 
     @Override
     public User findById(Integer userId) {
-        String query = "SELECT * FROM \"user\" WHERE id = ?;";
-        List<User> result = jdbcTemplate.query(query, mapper, userId);
+        String query = "SELECT * FROM \"user\" WHERE id = :id;";
+        MapSqlParameterSource params = new MapSqlParameterSource("id", userId);
+        List<User> result = namedParameterJdbcTemplate.query(query, params, mapper);
         if (result.isEmpty()) {
             LoggedException.throwNew(ExceptionType.USER_NOT_FOUND, getClass(), List.of(userId));
         }
@@ -43,19 +47,17 @@ public class UserDbStorage implements UserStorage {
     public User create(User user) {
         String query = """
                 INSERT INTO "user" (EMAIL, LOGIN, NAME, BIRTHDAY)
-                VALUES (?, ?, ?, ?);
+                VALUES (:email, :login, :name, :birthday);
                 """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        jdbcTemplate.update(
-                con -> {
-                    PreparedStatement ps = con.prepareStatement(query, new String[]{"id"});
-                    ps.setString(1, user.getEmail());
-                    ps.setString(2, user.getLogin());
-                    ps.setString(3, user.getName());
-                    ps.setDate(4, Date.valueOf(user.getBirthday()));
-                    return ps;
-                }, keyHolder);
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("email", user.getEmail())
+                .addValue("login", user.getLogin())
+                .addValue("name", user.getName())
+                .addValue("birthday", user.getBirthday());
+
+        namedParameterJdbcTemplate.update(query, params, keyHolder, new String[]{"id"});
 
         if (Optional.ofNullable(keyHolder.getKey()).isPresent()) {
             user.setId(keyHolder.getKey().intValue());
@@ -70,18 +72,19 @@ public class UserDbStorage implements UserStorage {
     public User update(User user) {
         String query = """
                     UPDATE "user"
-                    SET email = ?, login = ?, name = ?, birthday = ?
-                    WHERE "user".id = ?;
+                    SET email = :email, login = :login, name = :name, birthday = :birthday
+                    WHERE "user".id = :id;
                 """;
 
-        int updatedRows = jdbcTemplate.update(
-                query,
-                user.getEmail(),
-                user.getLogin(),
-                user.getName(),
-                user.getBirthday(),
-                user.getId()
-        );
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("email", user.getEmail())
+                .addValue("login", user.getLogin())
+                .addValue("name", user.getName())
+                .addValue("birthday", user.getBirthday())
+                .addValue("id", user.getId());
+
+        int updatedRows = namedParameterJdbcTemplate.update(query, params);
+
         if (updatedRows == 0) {
             LoggedException.throwNew(ExceptionType.USER_NOT_FOUND, getClass(), List.of(user.getId()));
         }
@@ -91,8 +94,9 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public Integer delete(Integer userId) {
-        String query = "DELETE FROM \"user\" WHERE id = ?";
-        int deletedRows = jdbcTemplate.update(query, userId);
+        String query = "DELETE FROM \"user\" WHERE id = :id";
+        MapSqlParameterSource params = new MapSqlParameterSource("id", userId);
+        int deletedRows = namedParameterJdbcTemplate.update(query, params);
         if (deletedRows == 0) {
             LoggedException.throwNew(ExceptionType.USER_NOT_FOUND, getClass(), List.of(userId));
         }
@@ -107,9 +111,10 @@ public class UserDbStorage implements UserStorage {
                 SELECT u.id, u.email, u.login, u.name, u.birthday
                 FROM friends f
                 JOIN "user" u ON f.request_to_id = u.id
-                WHERE f.request_from_id = ?
+                WHERE f.request_from_id = :userId
                 """;
-        List<User> response = jdbcTemplate.query(query, mapper, userId);
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        List<User> response = namedParameterJdbcTemplate.query(query, params, mapper);
         if (response.isEmpty()) {
             response = new ArrayList<>();
         }
@@ -124,29 +129,39 @@ public class UserDbStorage implements UserStorage {
                   ON a.request_to_id = u.id
                 JOIN friends b
                   ON a.request_to_id = b.request_to_id
-                WHERE a.request_from_id = ?
-                  AND b.request_from_id = ?;
+                WHERE a.request_from_id = :userIdA
+                  AND b.request_from_id = :userIdB;
                 """;
-        return jdbcTemplate.query(query, mapper, userIdA, userIdB);
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("userIdA", userIdA)
+                .addValue("userIdB", userIdB);
+
+        return namedParameterJdbcTemplate.query(query, params, mapper);
     }
 
     @Override
     public void addFriend(Integer userIdA, Integer userIdB) {
         String query = """
                 INSERT INTO FRIENDS (REQUEST_FROM_ID, REQUEST_TO_ID)
-                values(?, ?);
+                values(:userIdA, :userIdB);
                 """;
-        jdbcTemplate.update(query, userIdA, userIdB);
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("userIdA", userIdA)
+                .addValue("userIdB", userIdB);
+        namedParameterJdbcTemplate.update(query, params);
     }
 
     @Override
     public void removeFriend(Integer userIdA, Integer userIdB) {
         String query = """
                 DELETE FROM friends
-                WHERE request_from_id = ?
-                AND request_to_id = ?;
+                WHERE request_from_id = :userIdA
+                AND request_to_id = :userIdB;
                 """;
-        jdbcTemplate.update(query, userIdA, userIdB);
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("userIdA", userIdA)
+                .addValue("userIdB", userIdB);
+        namedParameterJdbcTemplate.update(query, params);
     }
 
     private static class UserRowMapper implements RowMapper<User> {

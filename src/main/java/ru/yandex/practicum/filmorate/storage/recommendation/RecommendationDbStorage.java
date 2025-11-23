@@ -4,7 +4,8 @@ import java.util.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage;
@@ -16,7 +17,7 @@ import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage;
 @Component
 @RequiredArgsConstructor
 public class RecommendationDbStorage implements RecommendationStorage {
-    private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final FilmDbStorage.FilmRowMapper filmRowMapper;
 
     /**
@@ -29,9 +30,10 @@ public class RecommendationDbStorage implements RecommendationStorage {
     public List<Integer> getLikedFilmsByUserId(Integer userId) {
         String query = """
                 SELECT film_id FROM "like"
-                WHERE user_id = ?;
+                WHERE user_id = :userId;
                 """;
-        return jdbcTemplate.queryForList(query, Integer.class, userId);
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        return namedParameterJdbcTemplate.queryForList(query, params, Integer.class);
     }
 
 
@@ -52,7 +54,6 @@ public class RecommendationDbStorage implements RecommendationStorage {
             return List.of();
         }
 
-
         // SQL-запрос для получения рекомендаций
         // Находим пользователей с максимальным пересечением по лайкам
         // и рекомендуем фильмы, которые они лайкнули, а текущий пользователь - нет
@@ -60,13 +61,13 @@ public class RecommendationDbStorage implements RecommendationStorage {
                 WITH user_likes AS (
                     SELECT film_id
                     FROM "like"
-                    WHERE user_id = ?
+                    WHERE user_id = :userId
                 ),
                 similar_users AS (
                     SELECT l.user_id, COUNT(*) AS common_likes
                     FROM "like" l
                     JOIN user_likes ul ON l.film_id = ul.film_id
-                    WHERE l.user_id != ?
+                    WHERE l.user_id != :userId
                     GROUP BY l.user_id
                 ),
                 recommendations AS (
@@ -85,7 +86,9 @@ public class RecommendationDbStorage implements RecommendationStorage {
                 LIMIT 10;
                 """;
 
-        List<Film> rawRecommendations = jdbcTemplate.query(query, filmRowMapper, userId, userId);
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+
+        List<Film> rawRecommendations = namedParameterJdbcTemplate.query(query, params, filmRowMapper);
 
         Set<Integer> likedFilmIds = new HashSet<>(userLikedFilms);
         List<Film> recommendations = rawRecommendations.stream()
