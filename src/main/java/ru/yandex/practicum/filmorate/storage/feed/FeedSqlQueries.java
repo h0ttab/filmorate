@@ -10,11 +10,11 @@ public enum FeedSqlQueries {
             SELECT * FROM feed
             """),
     FIND_BY_USER_ID("""
-            SELECT * FROM feed 
+            SELECT * FROM feed
             WHERE user_id = :userId
             """),
     SAVE("""
-            INSERT INTO feed (date, user_id, event_type, operation_type, entity_id) 
+            INSERT INTO feed (date, user_id, event_type, operation_type, entity_id)
             VALUES (:date, :userId, :eventType, :operationType, :entityId);
             """);
 
