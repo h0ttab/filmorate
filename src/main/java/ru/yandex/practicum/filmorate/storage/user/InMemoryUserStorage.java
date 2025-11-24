@@ -8,12 +8,12 @@ import ru.yandex.practicum.filmorate.exception.ExceptionType;
 import ru.yandex.practicum.filmorate.exception.LoggedException;
 import ru.yandex.practicum.filmorate.model.FriendStatus;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.AbstractStorage;
+import ru.yandex.practicum.filmorate.storage.AbstractInMemoryStorage;
 import ru.yandex.practicum.filmorate.util.Validators;
 
 @Component
 @RequiredArgsConstructor
-public class InMemoryUserStorage extends AbstractStorage<User> implements UserStorage {
+public class InMemoryUserStorage extends AbstractInMemoryStorage<User> implements UserStorage {
     private final Validators validators;
 
     public Map<Integer, User> getStorage() {
@@ -55,7 +55,7 @@ public class InMemoryUserStorage extends AbstractStorage<User> implements UserSt
 
     @Override
     public List<User> getFriends(Integer userId) {
-        validators.validateUserExits(userId, getClass());
+        validators.validateUserExists(userId, getClass());
         return mapEntityStorage.get(userId).getFriends().keySet().stream()
                 .map(mapEntityStorage::get).toList();
     }
@@ -84,13 +84,6 @@ public class InMemoryUserStorage extends AbstractStorage<User> implements UserSt
         if (userA.isPresent() && userB.isPresent()) {
             userA.get().getFriends().put(userIdB, FriendStatus.PENDING);
         } else {
-            int missingId;
-
-            if (userA.isEmpty()) {
-                missingId = userIdA;
-            } else {
-                missingId = userIdB;
-            }
             LoggedException.throwNew(ExceptionType.INVALID_FRIENDSHIP_ADD, getClass(), List.of(userIdA, userIdB));
         }
     }

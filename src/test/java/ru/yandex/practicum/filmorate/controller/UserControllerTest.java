@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -11,9 +12,9 @@ import ru.yandex.practicum.filmorate.config.ControllerTest;
 import ru.yandex.practicum.filmorate.model.User;
 
 @ControllerTest
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class UserControllerTest {
-    @Autowired
-    private WebTestClient webTestClient;
+    private final WebTestClient webTestClient;
 
     @Test
     void shouldFailOnInvalidInput_createUserTest_emptyUser() {

@@ -6,7 +6,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractStorage<T> {
+public abstract class AbstractInMemoryStorage<T> {
     protected final Map<Integer, T> mapEntityStorage = new HashMap<>();
     protected final Logger log = LoggerFactory.getLogger(getClass());
 

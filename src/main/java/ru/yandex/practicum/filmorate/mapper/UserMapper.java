@@ -1,35 +1,34 @@
 package ru.yandex.practicum.filmorate.mapper;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.mapstruct.AfterMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.dto.user.UserCreateDto;
 import ru.yandex.practicum.filmorate.model.dto.user.UserUpdateDto;
-import ru.yandex.practicum.filmorate.util.Validators;
 
-@Component
-@RequiredArgsConstructor
-public class UserMapper {
-    private final Validators validators;
+@Mapper(
+        componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.IGNORE
+)
+public interface UserMapper {
 
-    public User toEntity(UserCreateDto userCreateDto) {
-        return User.builder()
-                .name(validators.isValidString(userCreateDto.getName()) ? userCreateDto.getName() : userCreateDto.getLogin())
-                .login(userCreateDto.getLogin())
-                .email(userCreateDto.getEmail())
-                .birthday(userCreateDto.getBirthday())
-                .build();
+    User toEntity(UserCreateDto dto);
+
+    User toEntity(UserUpdateDto dto);
+
+    @AfterMapping
+    default void applyNameFallback(UserCreateDto dto, @MappingTarget User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(dto.getLogin());
+        }
     }
 
-    public User toEntity(UserUpdateDto userUpdateDto) {
-        return User.builder()
-                .id(userUpdateDto.getId())
-                .email(userUpdateDto.getEmail().orElse(null))
-                .name(validators.isValidString(userUpdateDto.getName().orElse(null)) ?
-                        userUpdateDto.getName().get() : userUpdateDto.getLogin()
-                )
-                .login(userUpdateDto.getLogin())
-                .birthday(userUpdateDto.getBirthday())
-                .build();
+    @AfterMapping
+    default void applyNameFallback(UserUpdateDto dto, @MappingTarget User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(dto.getLogin());
+        }
     }
 }

@@ -1,75 +1,122 @@
 package ru.yandex.practicum.filmorate.mapper;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.springframework.beans.factory.annotation.Autowired;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.dto.film.*;
+import ru.yandex.practicum.filmorate.model.dto.ObjectIdDto;
+import ru.yandex.practicum.filmorate.model.dto.film.FilmCreateDto;
+import ru.yandex.practicum.filmorate.model.dto.film.FilmUpdateDto;
+import ru.yandex.practicum.filmorate.service.DirectorService;
 import ru.yandex.practicum.filmorate.service.GenreService;
 import ru.yandex.practicum.filmorate.service.MpaService;
 import ru.yandex.practicum.filmorate.util.Validators;
 
-@Component
-@RequiredArgsConstructor
-public class FilmMapper {
-    private final Validators validators;
-    private final MpaService mpaService;
-    private final GenreService genreService;
+@Mapper(componentModel = "spring")
+public abstract class FilmMapper {
 
-    public Film toEntity(FilmCreateDto filmCreateDto) {
-        validators.validateFilmReleaseDate(filmCreateDto.getReleaseDate(), getClass());
-        validators.validateMpaExists(filmCreateDto.getMpa().get().getId(), getClass());
+    protected Validators validators;
+    protected MpaService mpaService;
+    protected GenreService genreService;
+    protected DirectorService directorService;
 
-        Film.FilmBuilder film = Film.builder()
-                .name(filmCreateDto.getName())
-                .description(filmCreateDto.getDescription())
-                .duration(filmCreateDto.getDuration());
-
-        film.mpa(mpaService.findById(filmCreateDto.getMpa().get().getId()));
-        film.releaseDate(filmCreateDto.getReleaseDate());
-        List<GenreDto> genreDtoList = filmCreateDto.getGenres().orElse(new ArrayList<>());
-        ArrayList<Genre> genreList = new ArrayList<>();
-
-        if (!genreDtoList.isEmpty()) {
-            for (GenreDto genreDto : filmCreateDto.getGenres().get()) {
-                validators.validateGenreExists(genreDto.getId(), getClass());
-            }
-            genreDtoList.forEach(genreDto -> genreList.add(genreService.findById(genreDto.getId())));
-        }
-        film.genres(genreList);
-
-        return film.build();
+    @Autowired
+    public void setValidators(Validators validators) {
+        this.validators = validators;
     }
 
-    public Film toEntity(FilmUpdateDto filmUpdateDto) {
-        Film.FilmBuilder filmBuilder = Film.builder()
-                .id(filmUpdateDto.getId())
-                .name(filmUpdateDto.getName().orElse(null))
-                .duration(filmUpdateDto.getDuration().orElse(null))
-                .description(filmUpdateDto.getDescription().orElse(null));
+    @Autowired
+    public void setMpaService(MpaService mpaService) {
+        this.mpaService = mpaService;
+    }
 
-        if (Optional.ofNullable(filmUpdateDto.getReleaseDate()).isPresent()) {
-            filmBuilder.releaseDate(filmUpdateDto.getReleaseDate());
+    @Autowired
+    public void setGenreService(GenreService genreService) {
+        this.genreService = genreService;
+    }
+
+    @Autowired
+    public void setDirectorService(DirectorService directorService) {
+        this.directorService = directorService;
+    }
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "mpa", ignore = true)
+    @Mapping(target = "genres", ignore = true)
+    @Mapping(target = "directors", ignore = true)
+    protected abstract Film mapCreate(FilmCreateDto dto);
+
+    @Mapping(target = "mpa", ignore = true)
+    @Mapping(target = "genres", ignore = true)
+    @Mapping(target = "directors", ignore = true)
+    protected abstract Film mapUpdate(FilmUpdateDto dto);
+
+    public Film toEntity(FilmCreateDto dto) {
+        Film film = mapCreate(dto);
+
+        List<Genre> genres = List.of();
+        if (Optional.ofNullable(dto.getGenres()).isPresent()) {
+            List<Integer> genreIdList = dto.getGenres().stream()
+                    .map(ObjectIdDto::getId)
+                    .collect(Collectors.toList());
+            genres = genreService.findByIdList(genreIdList);
         }
 
-        if (filmUpdateDto.getGenres().isPresent()) {
-            List<Genre> genresOfFilm = filmUpdateDto.getGenres().get().stream()
-                    .mapToInt(GenreDto::getId)
-                    .boxed()
-                    .peek(genreId -> {
-                        validators.validateGenreExists(genreId, getClass());
-                    })
-                    .map(genreService::findById)
-                    .toList();
-            filmBuilder.genres(new ArrayList<>(genresOfFilm));
+        if (Optional.ofNullable(dto.getDirectors()).isPresent()) {
+            dto.getDirectors().stream()
+                    .map(ObjectIdDto::getId)
+                    .forEach(id -> validators.validateDirectorExists(id, getClass()));
         }
 
-        if (filmUpdateDto.getMpa().isPresent()) {
-            filmBuilder.mpa(mpaService.findById(filmUpdateDto.getMpa().get().getId()));
+        var mpa = mpaService.findById(dto.getMpa().getId());
+
+        List<Director> directors;
+        if (Optional.ofNullable(dto.getDirectors()).isEmpty()) {
+            directors = List.of();
+        } else {
+            List<Integer> directorIdList = dto.getDirectors().stream()
+                    .map(ObjectIdDto::getId)
+                    .collect(Collectors.toList());
+            directors = directorService.findByIdList(directorIdList);
         }
 
-        return filmBuilder.build();
+        film.setGenres(genres);
+        film.setMpa(mpa);
+        film.setDirectors(directors);
+
+        return film;
+    }
+
+    public Film toEntity(FilmUpdateDto dto) {
+        Film film = mapUpdate(dto);
+
+        if (Optional.ofNullable(dto.getGenres()).isPresent()) {
+            List<Integer> genreIdList = dto.getGenres().stream()
+                    .map(ObjectIdDto::getId)
+                    .collect(Collectors.toList());
+            film.setGenres(genreService.findByIdList(genreIdList));
+        }
+
+        if (Optional.ofNullable(dto.getMpa()).isPresent()) {
+            Integer mpaId = dto.getMpa().getId();
+            film.setMpa(mpaService.findById(mpaId));
+        }
+
+        if (Optional.ofNullable(dto.getDirectors()).isPresent()) {
+            List<Integer> directorIdList = dto.getDirectors().stream()
+                    .map(ObjectIdDto::getId)
+                    .collect(Collectors.toList());
+            film.setDirectors(directorService.findByIdList(directorIdList));
+        } else {
+            film.setDirectors(List.of());
+        }
+
+        return film;
     }
 }

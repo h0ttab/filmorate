@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS review_feedback CASCADE;
+DROP TABLE IF EXISTS review CASCADE;
 DROP TABLE IF EXISTS friends CASCADE;
 DROP TABLE IF EXISTS "like" CASCADE;
 DROP TABLE IF EXISTS film_genre CASCADE;
@@ -5,6 +7,9 @@ DROP TABLE IF EXISTS "user" CASCADE;
 DROP TABLE IF EXISTS film CASCADE;
 DROP TABLE IF EXISTS mpa CASCADE;
 DROP TABLE IF EXISTS genre CASCADE;
+DROP TABLE IF EXISTS feed CASCADE;
+DROP TABLE IF EXISTS director CASCADE;
+DROP TABLE IF EXISTS film_director CASCADE;
 
 CREATE TABLE IF NOT EXISTS mpa (
     id SERIAL PRIMARY KEY,
@@ -16,13 +21,24 @@ CREATE TABLE IF NOT EXISTS genre (
     name VARCHAR(255) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS director (
+    id SERIAL PRIMARY KEY,
+    name varchar(255) NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS film (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description VARCHAR(255),
     release_date DATE,
     duration INTEGER,
-    mpa_id INTEGER REFERENCES mpa(id)
+    mpa_id INTEGER REFERENCES mpa(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS film_director (
+    id SERIAL PRIMARY KEY,
+    film_id integer REFERENCES film(id) ON DELETE CASCADE,
+    director_id integer REFERENCES director(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS film_genre (
@@ -43,8 +59,7 @@ CREATE TABLE IF NOT EXISTS "user" (
 CREATE TABLE IF NOT EXISTS "like" (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES "user"(id) ON DELETE CASCADE,
-    film_id INTEGER REFERENCES film(id) ON DELETE CASCADE,
-    UNIQUE (user_id, film_id)
+    film_id INTEGER REFERENCES film(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS friends (
@@ -54,3 +69,31 @@ CREATE TABLE IF NOT EXISTS friends (
     is_accepted BOOLEAN DEFAULT FALSE,
     UNIQUE (request_from_id, request_to_id)
 );
+
+CREATE TABLE IF NOT EXISTS feed (
+    id SERIAL PRIMARY KEY,
+    date TIMESTAMP NOT NULL,
+    user_id INTEGER REFERENCES "user"(id) ON DELETE CASCADE,
+    event_type VARCHAR(255) NOT NULL,
+    operation_type VARCHAR(255) NOT NULL,
+    entity_id INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS review (
+    id SERIAL PRIMARY KEY,
+    content TEXT NOT NULL,
+    is_positive BOOLEAN NOT NULL,
+    user_id INT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+    film_id INT NOT NULL REFERENCES film(id) ON DELETE CASCADE,
+    useful INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS review_feedback (
+    review_id INT NOT NULL REFERENCES review(id) ON DELETE CASCADE,
+    user_id INT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+    is_useful BOOLEAN NOT NULL,
+    PRIMARY KEY (review_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_review_film_id ON review(film_id);
+CREATE INDEX IF NOT EXISTS idx_review_useful_desc ON review(useful DESC);

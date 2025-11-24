@@ -6,17 +6,18 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.model.dto.user.UserCreateDto;
 import ru.yandex.practicum.filmorate.model.dto.user.UserUpdateDto;
+import ru.yandex.practicum.filmorate.service.RecommendationService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
-
     private final UserService userService;
+    private final RecommendationService recommendationService;
 
     @GetMapping
     public Collection<User> findAll() {
@@ -38,6 +39,16 @@ public class UserController {
         userService.removeFriend(id, friendId);
     }
 
+    @GetMapping("/{userId}/feed")
+    public Collection<Feed> getUserFeed(@PathVariable Integer userId) {
+        return userService.getUserFeed(userId);
+    }
+
+    @GetMapping("/feed")
+    public Collection<Feed> getAllFeeds() {
+        return userService.getAllFeeds();
+    }
+
     @GetMapping("/{id}/friends")
     public Collection<User> getUserFriends(@PathVariable Integer id) {
         return userService.getFriends(id);
@@ -54,7 +65,28 @@ public class UserController {
     }
 
     @PutMapping
-    public User update(@RequestBody UserUpdateDto userUpdateDto) {
+    public User update(@Valid @RequestBody UserUpdateDto userUpdateDto) {
         return userService.update(userUpdateDto);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Integer id) {
+        userService.delete(id);
+    }
+
+    /**
+     * Получает список рекомендованных фильмов для указанного пользователя.
+     * Рекомендации формируются на основе алгоритма коллаборативной фильтрации:
+     * 1. Находим пользователей с максимальным количеством пересечения по лайкам.
+     * 2. Определяем фильмы, которые один пролайкал, а другой нет.
+     * 3. Рекомендуем фильмы, которым поставил лайк пользователь с похожими вкусами,
+     * а тот, для кого составляется рекомендация, ещё не поставил.
+     *
+     * @param id идентификатор пользователя
+     * @return список рекомендованных фильмов
+     */
+    @GetMapping("/{id}/recommendations")
+    public Collection<Film> getRecommendations(@PathVariable Integer id) {
+        return recommendationService.getRecommendations(id);
     }
 }

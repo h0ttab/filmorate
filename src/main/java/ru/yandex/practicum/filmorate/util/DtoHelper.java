@@ -2,13 +2,12 @@ package ru.yandex.practicum.filmorate.util;
 
 import java.lang.reflect.Field;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class DtoHelper {
-    protected final Logger log = LoggerFactory.getLogger(getClass());
 
     public Object transferFields(Object from, Object to) {
         for (Field field : from.getClass().getDeclaredFields()) {

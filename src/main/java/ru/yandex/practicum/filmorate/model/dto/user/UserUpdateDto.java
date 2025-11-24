@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.model.dto.user;
 
 import java.time.LocalDate;
-import java.util.Optional;
 
 import jakarta.validation.constraints.*;
 import lombok.Builder;
@@ -15,12 +14,11 @@ public class UserUpdateDto {
     private Integer id;
 
     @Email
-    private Optional<String> email;
+    private String email;
 
-    @NotBlank
     private String login;
 
-    private Optional<String> name;
+    private String name;
 
     @PastOrPresent
     private LocalDate birthday;
