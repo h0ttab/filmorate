@@ -4,14 +4,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import com.app.filmorate.exception.ExceptionType;
 import com.app.filmorate.exception.LoggedException;
 import com.app.filmorate.model.Film;
 import com.app.filmorate.model.search.SearchTarget;
 import com.app.filmorate.storage.search.Search;
 import com.app.filmorate.util.Validators;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor

@@ -2,8 +2,6 @@ package com.app.filmorate.service;
 
 import java.util.List;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import com.app.filmorate.mapper.ReviewMapper;
 import com.app.filmorate.model.Review;
 import com.app.filmorate.model.dto.review.ReviewCreateDto;
@@ -11,6 +9,8 @@ import com.app.filmorate.model.dto.review.ReviewUpdateDto;
 import com.app.filmorate.storage.review.ReviewStorage;
 import com.app.filmorate.util.DtoHelper;
 import com.app.filmorate.util.Validators;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 import static com.app.filmorate.model.FeedEventType.REVIEW;
 import static com.app.filmorate.model.OperationType.*;

@@ -2,15 +2,15 @@ package com.app.filmorate.service;
 
 import java.util.*;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 import com.app.filmorate.exception.ExceptionType;
 import com.app.filmorate.exception.LoggedException;
 import com.app.filmorate.model.Genre;
 import com.app.filmorate.storage.genre.GenreDbStorage;
 import com.app.filmorate.storage.genre.GenreDbStorage.GenreBatchDto;
 import com.app.filmorate.util.Validators;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service

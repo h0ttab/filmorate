@@ -6,18 +6,18 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.app.filmorate.model.Feed;
+import com.app.filmorate.model.User;
+import com.app.filmorate.storage.user.UserDbStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
-import com.app.filmorate.model.Feed;
-import com.app.filmorate.model.User;
-import com.app.filmorate.storage.user.UserDbStorage;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static com.app.filmorate.model.FeedEventType.*;
 import static com.app.filmorate.model.OperationType.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @AutoConfigureTestDatabase

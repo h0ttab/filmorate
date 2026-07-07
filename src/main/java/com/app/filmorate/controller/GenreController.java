@@ -2,11 +2,11 @@ package com.app.filmorate.controller;
 
 import java.util.Collection;
 
+import com.app.filmorate.model.Genre;
+import com.app.filmorate.service.GenreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import com.app.filmorate.model.Genre;
-import com.app.filmorate.service.GenreService;
 
 @RestController
 @RequestMapping("/genres")

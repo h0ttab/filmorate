@@ -4,13 +4,13 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
 import com.app.filmorate.exception.ExceptionType;
 import com.app.filmorate.exception.LoggedException;
 import com.app.filmorate.model.dto.film.FilmCreateDto;
 import com.app.filmorate.model.dto.film.FilmUpdateDto;
+import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor

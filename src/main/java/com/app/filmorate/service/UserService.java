@@ -2,10 +2,6 @@ package com.app.filmorate.service;
 
 import java.util.*;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Service;
 import com.app.filmorate.mapper.UserMapper;
 import com.app.filmorate.model.Feed;
 import com.app.filmorate.model.User;
@@ -14,6 +10,10 @@ import com.app.filmorate.model.dto.user.UserUpdateDto;
 import com.app.filmorate.storage.user.UserStorage;
 import com.app.filmorate.util.DtoHelper;
 import com.app.filmorate.util.Validators;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
 
 import static com.app.filmorate.model.FeedEventType.FRIEND;
 import static com.app.filmorate.model.OperationType.ADD;

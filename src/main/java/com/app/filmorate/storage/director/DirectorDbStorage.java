@@ -5,6 +5,9 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
+import com.app.filmorate.exception.ExceptionType;
+import com.app.filmorate.exception.LoggedException;
+import com.app.filmorate.model.Director;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
@@ -12,9 +15,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.*;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
-import com.app.filmorate.exception.ExceptionType;
-import com.app.filmorate.exception.LoggedException;
-import com.app.filmorate.model.Director;
 
 @Primary
 @Component

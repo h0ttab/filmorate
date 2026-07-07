@@ -2,12 +2,12 @@ package com.app.filmorate.service;
 
 import java.util.List;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 import com.app.filmorate.model.Film;
 import com.app.filmorate.storage.recommendation.RecommendationStorage;
 import com.app.filmorate.util.Validators;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 /**
  * Сервис для работы с рекомендациями фильмов.

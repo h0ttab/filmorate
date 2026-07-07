@@ -4,19 +4,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.app.filmorate.model.Director;
-import com.app.filmorate.model.Film;
-import com.app.filmorate.model.Genre;
+import com.app.filmorate.model.*;
 import com.app.filmorate.model.dto.ObjectIdDto;
 import com.app.filmorate.model.dto.film.FilmCreateDto;
 import com.app.filmorate.model.dto.film.FilmUpdateDto;
-import com.app.filmorate.service.DirectorService;
-import com.app.filmorate.service.GenreService;
-import com.app.filmorate.service.MpaService;
+import com.app.filmorate.service.*;
 import com.app.filmorate.util.Validators;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring")
 public abstract class FilmMapper {

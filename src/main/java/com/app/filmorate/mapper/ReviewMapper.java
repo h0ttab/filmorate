@@ -1,13 +1,11 @@
 package com.app.filmorate.mapper;
 
-import org.mapstruct.BeforeMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.springframework.beans.factory.annotation.Autowired;
 import com.app.filmorate.model.Review;
 import com.app.filmorate.model.dto.review.ReviewCreateDto;
 import com.app.filmorate.model.dto.review.ReviewUpdateDto;
 import com.app.filmorate.util.Validators;
+import org.mapstruct.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring")
 public abstract class ReviewMapper {

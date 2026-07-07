@@ -4,6 +4,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
+import com.app.filmorate.exception.ExceptionType;
+import com.app.filmorate.exception.LoggedException;
+import com.app.filmorate.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +16,6 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
-import com.app.filmorate.exception.ExceptionType;
-import com.app.filmorate.exception.LoggedException;
-import com.app.filmorate.model.User;
 
 @Slf4j
 @Component

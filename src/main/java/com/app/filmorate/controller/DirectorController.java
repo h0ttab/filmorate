@@ -2,12 +2,12 @@ package com.app.filmorate.controller;
 
 import java.util.List;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
 import com.app.filmorate.model.Director;
 import com.app.filmorate.model.dto.film.DirectorDto;
 import com.app.filmorate.service.DirectorService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/directors")

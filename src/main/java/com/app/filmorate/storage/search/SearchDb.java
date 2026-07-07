@@ -3,14 +3,14 @@ package com.app.filmorate.storage.search;
 import java.util.List;
 import java.util.Set;
 
+import com.app.filmorate.model.Film;
+import com.app.filmorate.model.search.SearchTarget;
+import com.app.filmorate.storage.film.FilmDbStorage.FilmRowMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
-import com.app.filmorate.model.Film;
-import com.app.filmorate.model.search.SearchTarget;
-import com.app.filmorate.storage.film.FilmDbStorage.FilmRowMapper;
 
 @Primary
 @Component

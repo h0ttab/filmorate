@@ -2,14 +2,14 @@ package com.app.filmorate.storage.user;
 
 import java.util.*;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 import com.app.filmorate.exception.ExceptionType;
 import com.app.filmorate.exception.LoggedException;
 import com.app.filmorate.model.FriendStatus;
 import com.app.filmorate.model.User;
 import com.app.filmorate.storage.AbstractInMemoryStorage;
 import com.app.filmorate.util.Validators;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor

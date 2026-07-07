@@ -1,12 +1,12 @@
 package com.app.filmorate.exception.handler;
 
+import com.app.filmorate.exception.NotFoundException;
 import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
-import com.app.filmorate.exception.NotFoundException;
 
 @Slf4j
 @RestControllerAdvice

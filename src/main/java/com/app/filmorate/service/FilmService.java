@@ -3,10 +3,6 @@ package com.app.filmorate.service;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.app.filmorate.model.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 import com.app.filmorate.exception.ExceptionType;
 import com.app.filmorate.exception.LoggedException;
 import com.app.filmorate.mapper.FilmMapper;
@@ -17,6 +13,9 @@ import com.app.filmorate.storage.film.FilmStorage;
 import com.app.filmorate.storage.film.SortOrder;
 import com.app.filmorate.util.DtoHelper;
 import com.app.filmorate.util.Validators;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service

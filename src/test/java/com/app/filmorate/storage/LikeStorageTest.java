@@ -5,14 +5,14 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.app.filmorate.storage.like.LikeDbStorage;
+import com.app.filmorate.testutil.TestDataUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
-import com.app.filmorate.storage.like.LikeDbStorage;
-import com.app.filmorate.testutil.TestDataUtil;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -2,13 +2,13 @@ package com.app.filmorate.storage.recommendation;
 
 import java.util.*;
 
+import com.app.filmorate.model.Film;
+import com.app.filmorate.storage.film.FilmDbStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
-import com.app.filmorate.model.Film;
-import com.app.filmorate.storage.film.FilmDbStorage;
 
 /**
  * Реализация хранилища рекомендаций фильмов с использованием базы данных.

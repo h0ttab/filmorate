@@ -1,12 +1,9 @@
 package com.app.filmorate.mapper;
 
-import org.mapstruct.AfterMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.ReportingPolicy;
 import com.app.filmorate.model.User;
 import com.app.filmorate.model.dto.user.UserCreateDto;
 import com.app.filmorate.model.dto.user.UserUpdateDto;
+import org.mapstruct.*;
 
 @Mapper(
         componentModel = "spring",

@@ -5,12 +5,12 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 
+import com.app.filmorate.model.Genre;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.*;
 import org.springframework.stereotype.Component;
-import com.app.filmorate.model.Genre;
 
 @Component
 @RequiredArgsConstructor

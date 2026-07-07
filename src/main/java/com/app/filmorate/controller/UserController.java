@@ -3,15 +3,14 @@ package com.app.filmorate.controller;
 import java.util.Collection;
 
 import com.app.filmorate.model.*;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
-import com.app.filmorate.model.*;
 import com.app.filmorate.model.dto.user.UserCreateDto;
 import com.app.filmorate.model.dto.user.UserUpdateDto;
 import com.app.filmorate.service.RecommendationService;
 import com.app.filmorate.service.UserService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/users")

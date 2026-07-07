@@ -7,16 +7,15 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.app.filmorate.config.ControllerTest;
 import com.app.filmorate.model.*;
+import com.app.filmorate.testutil.TestDataUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import com.app.filmorate.config.ControllerTest;
-import com.app.filmorate.model.*;
-import com.app.filmorate.testutil.TestDataUtil;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

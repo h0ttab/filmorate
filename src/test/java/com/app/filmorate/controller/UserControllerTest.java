@@ -4,12 +4,12 @@ import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 
+import com.app.filmorate.config.ControllerTest;
+import com.app.filmorate.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import com.app.filmorate.config.ControllerTest;
-import com.app.filmorate.model.User;
 
 @ControllerTest
 @RequiredArgsConstructor(onConstructor_ = @Autowired)

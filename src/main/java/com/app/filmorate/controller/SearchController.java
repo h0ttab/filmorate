@@ -3,10 +3,10 @@ package com.app.filmorate.controller;
 import java.util.List;
 import java.util.Set;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
 import com.app.filmorate.model.Film;
 import com.app.filmorate.service.SearchService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/films/search")

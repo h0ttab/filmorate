@@ -2,11 +2,11 @@ package com.app.filmorate.controller;
 
 import java.util.Collection;
 
+import com.app.filmorate.model.Mpa;
+import com.app.filmorate.service.MpaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import com.app.filmorate.model.Mpa;
-import com.app.filmorate.service.MpaService;
 
 @RestController
 @RequestMapping("/mpa")
