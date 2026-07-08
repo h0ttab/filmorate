@@ -12,13 +12,14 @@ This is an educational project developed collaboratively by a team of 4 people. 
 * **Activity Feed:** Track recent actions (likes, reviews, new friends) of a user.
 
 ## My Contribution
-In this team project, I was responsible for the following tasks:
-* **Search Functionality:** Implemented dynamic movie search by title and/or director.
+In this team project, I was responsible for team coordination as a team lead and for implementation of the following tasks:
+* **Core Logic:** Implemented core buiseness logic of the app, so the team could join in on the features stage.
+* **Search Functionality:** Implemented dynamic movie search by title, description and/or director.
 * **Directors Domain:** Developed the full CRUD and database relationships for movie directors, including sorting movies by year or popularity.
 * **Cascading Deletions:** Added safe deletion of users and movies, ensuring all related data (likes, friendships, reviews) is properly cleared from the DB.
 * **Query Optimization:** Solved the N+1 query problem by implementing an attribute enrichment method (`addAttributes`) that fetches genres, directors, and likes in batches using SQL `IN` clauses.
 
-## Tech Stack & Skills Applied
+## Tech Stack
 * **Language:** Java 21
 * **Framework:** Spring Boot 3.5 (Web, Validation)
 * **Database:** H2 Database. We deliberately avoided ORM (Hibernate) and used `NamedParameterJdbcTemplate` with raw SQL queries to practice database interactions and optimizations.
